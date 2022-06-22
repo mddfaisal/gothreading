@@ -1,0 +1,22 @@
+{
+    "properties": {
+        "name": {
+            "type": "text"
+        },
+        "email": {
+            "type": "text"
+        },
+        "phone": {
+            "type": "text"
+        },
+        "uuid": {
+            "type": "text"
+        },
+        "user_data": {
+            "type": "text"
+        },
+        "sentence": {
+            "type": "text"
+        }
+    }
+}

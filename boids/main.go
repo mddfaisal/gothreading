@@ -10,8 +10,8 @@ import (
 
 const (
 	screenWidth, screenHeight = 640, 360
-	boidCount                 = 500
-	viewRadius                = 1300
+	boidCount                 = 100
+	viewRadius                = 13
 	adjRate                   = 0.015
 )
 
@@ -19,7 +19,7 @@ var (
 	green   = color.RGBA{10, 255, 50, 255}
 	boids   [boidCount]*Boid
 	boidMap [screenWidth + 1][screenHeight + 1]int
-	lock    = sync.Mutex{}
+	rWlock  = sync.RWMutex{}
 )
 
 type Game struct{}
@@ -49,7 +49,7 @@ func main() {
 	}
 
 	for i := 0; i < boidCount; i++ {
-		CreateBoid(i)
+		createBoid(i)
 	}
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Boids in a box")
