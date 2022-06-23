@@ -1,0 +1,72 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"indexing/db"
+	"indexing/models/indexdata"
+	"indexing/utils"
+	"net/http"
+	"time"
+
+	"github.com/joho/godotenv"
+)
+
+var (
+	nextUsersId int64
+	records     = 10000
+	url         = "http://localhost:9200/fakerdata/_doc/"
+)
+
+type jsondata struct {
+	id   int64
+	data string
+}
+
+func getUsersId(i int64) int64 {
+	var uid int64
+	query := `select id from users where id > ` + fmt.Sprintf("%d", i) + ` limit 1`
+	result := db.Db().QueryRow(query)
+	result.Scan(&uid)
+	return uid
+}
+
+func getIndexingData(nextUserIdChan chan int64, indexingDataChan chan jsondata) {
+	for i := range nextUserIdChan {
+		index := indexdata.NewIndexingData(i)
+		index.FindById()
+		indexingDataChan <- jsondata{data: index.AsJson(), id: i}
+	}
+}
+
+func doIndexing(indexingDataChan chan jsondata) {
+	for data := range indexingDataChan {
+		req, err := http.NewRequest(http.MethodPost, url+fmt.Sprintf("%v", data.id), bytes.NewBuffer([]byte(data.data)))
+		req.Header.Set("Content-Type", "application/json")
+		utils.Panic(err)
+		client := http.Client{}
+		resp, err := client.Do(req)
+		utils.Panic(err)
+		err = resp.Body.Close()
+		utils.Panic(err)
+	}
+}
+
+func main() {
+	utils.Panic(godotenv.Load())
+	now := time.Now()
+	nextUserIdChan := make(chan int64)
+	prevUserIdChan := make(chan int64)
+	indexingDataChan := make(chan jsondata)
+
+	go getIndexingData(nextUserIdChan, indexingDataChan)
+	go doIndexing(indexingDataChan)
+	for i := 0; i <= records; i++ {
+		nextUsersId = getUsersId(nextUsersId)
+		nextUserIdChan <- nextUsersId
+	}
+	close(nextUserIdChan)
+	close(prevUserIdChan)
+	close(indexingDataChan)
+	fmt.Println("Elapced:", time.Since(now))
+}

@@ -14,7 +14,7 @@ import (
 
 var (
 	nextUsersId int64
-	records     = 1000
+	records     = 10000
 	url         = "http://localhost:9200/fakerdata/_doc/"
 )
 
